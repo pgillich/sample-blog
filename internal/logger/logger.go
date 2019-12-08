@@ -19,7 +19,7 @@ func Init(logLevel string) {
 
 	if logger == nil {
 		flags := errfmt.FlagCallStackOnConsole | errfmt.FlagCallStackInHTTPProblem | errfmt.FlagPrintStructFieldNames
-		callStackSkipLast := 3
+		callStackSkipLast := 0
 
 		logLevelValue, err := log.ParseLevel(logLevel)
 		if err != nil {

@@ -34,7 +34,7 @@ func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine {
 
 // GetUserPostCommentStats collects and returns user activity
 func GetUserPostCommentStats(c *gin.Context, dbHandler *dao.Handler) {
-	if stats, err := dbHandler.GetUserPostCommentStats(c.Param("days")); err != nil {
+	if stats, err := dbHandler.GetUserPostCommentStats(c.Query("days")); err != nil {
 		errs := logger.Get().WithError(err)
 		statusCode := http.StatusBadRequest
 		httpProblem := errfmt.BuildHTTPProblem(statusCode, errs)

@@ -108,7 +108,7 @@ Paths for O&M (without `/api/v1` prefix):
 
 It's simple: Sqlite. Sqlite supports in-memory storage, so faking is not needed during automatic tests.
 
-If different DBs should be supported, Factory+Builder design pattern can be used, where in-memory Sqlite can be used for automatic tests. Currently, Postgres can be used, too, but not tested.
+If different DBs should be supported, Factory+Builder design pattern can be used, where in-memory Sqlite can be used for automatic tests. Currently, Postgres might be used, too, but not tested.
 
 Unfortunatelly, Sqlite does not support foreign keys: <https://github.com/jinzhu/gorm/issues/635>. Example for workaround:
 
@@ -116,10 +116,68 @@ Unfortunatelly, Sqlite does not support foreign keys: <https://github.com/jinzhu
 UserID uint   `json:"userID" sql:"type:integer REFERENCES users(id)"`
 ```
 
+Running SQLite using filesystem:
+
+```sh
+mkdir -p tmp/sqlite
+./sample-blog frontend --db-dsn tmp/sqlite/blog.db
+```
+
 ## Automatic test
 
-gin+httptest:
-<https://github.com/swaggo/gin-swagger/blob/master/swagger_test.go>
+Instead of unit tests, E2E function test were written, because it makes better coverage. The test cases imply a HTTP request to Gin, the middleware calls DB component, too. For making artificial environment, test case hacks a few things and starts Gin and handlers with different parameters.
+
+`stat/user-post-comment`
+
+Positive test: `TestGetUserPostCommentStats`, see same with curl:
+
+```text
+$ curl -s localhost:8088/api/v1/stat/user-post-comment?days=4 | jq
+{
+  "1": {
+    "userName": "Kovács János",
+    "entries": 0,
+    "comments": 1
+  },
+  "2": {
+    "userName": "Szabó Pál",
+    "entries": 0,
+    "comments": 0
+  },
+  "3": {
+    "userName": "Kocsis Irma",
+    "entries": 0,
+    "comments": 0
+  }
+}
+```
+
+Negative test: `TestGetUserPostCommentStatsFailed`, see same with curl:
+
+```text
+$ curl -s localhost:8088/api/v1/stat/user-post-comment?days=négy | jq
+{
+  "type": "about:blank",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "invalid interval: strconv.ParseUint: parsing \"négy\": invalid syntax",
+  "details": {
+    "error": "\"invalid interval: strconv.ParseUint: parsing \\\"négy\\\": invalid syntax\"",
+    "time": "\"2019-12-08T16:02:20+01:00\""
+  },
+  "callstack": [
+    "internal/dao.(*Handler).GetUserPostCommentStats() dao.go:210",
+    "pkg/frontend.GetUserPostCommentStats() frontend.go:37",
+    "internal/web.DecorHandlerDB.func1() gin.go:16",
+    "github.com/gin-gonic/gin.(*Context).Next() context.go:124",
+    "github.com/gin-gonic/gin.(*Engine).handleHTTPRequest() gin.go:389",
+    "github.com/gin-gonic/gin.(*Engine).ServeHTTP() gin.go:351",
+    "net/http.serverHandler.ServeHTTP() server.go:2802",
+    "net/http.(*conn).serve() server.go:1890",
+    "runtime.goexit() asm_amd64.s:1357"
+  ]
+}
+```
 
 ## Prometheus
 

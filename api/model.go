@@ -14,27 +14,42 @@ type User struct {
 	Password string `json:"-"`
 }
 
+// TableName forces table name singular
+func (User) TableName() string {
+	return "user"
+}
+
 // Entry is the internal representation of entry table
 type Entry struct {
 	gorm.Model
-	UserID uint   `json:"userID" sql:"type:integer REFERENCES users(id)"`
+	UserID uint   `json:"userID" sql:"type:integer REFERENCES user(id)"`
 	Text   string `json:"text"`
+}
+
+// TableName forces table name singular
+func (Entry) TableName() string {
+	return "entry"
 }
 
 // Comment is the internal representation of comment table
 type Comment struct {
 	gorm.Model
-	UserID  uint   `json:"userID" sql:"type:integer REFERENCES users(id)"`
-	EntryID uint   `json:"entryID" sql:"type:integer REFERENCES entries(id)"`
+	UserID  uint   `json:"userID" sql:"type:integer REFERENCES user(id)"`
+	EntryID uint   `json:"entryID" sql:"type:integer REFERENCES entry(id)"`
 	Text    string `json:"text"`
+}
+
+// TableName forces table name singular
+func (Comment) TableName() string {
+	return "comment"
 }
 
 // PostCommentStat is statistic about a user activity
 type PostCommentStat struct {
-	UserName    string `json:"userName"`
-	EntryText   uint   `json:"entryText"`
-	CommentText uint   `json:"commentText"`
+	UserName string `json:"userName"`
+	Entries  uint   `json:"entries"`
+	Comments uint   `json:"comments"`
 }
 
 // UserPostCommentStats is statistic about user activities
-type UserPostCommentStats map[uint]PostCommentStat
+type UserPostCommentStats map[uint]*PostCommentStat

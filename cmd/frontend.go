@@ -36,14 +36,19 @@ func startFrontend() {
 	hostPort := viper.GetString(configs.OptServiceHostPort)
 	logger.Get().Infof("Start Frontend on %s", hostPort)
 
+	samples := []dao.CompactSample{}
+	if viper.GetBool(configs.OptDbSample) {
+		samples = dao.GetDefaultSampleFill()
+	}
+
 	dbHandler, err := dao.NewHandler(
-		viper.GetString(configs.OptDbDialect), viper.GetString(configs.OptDbDsn), viper.GetBool(configs.OptDbSample))
+		viper.GetString(configs.OptDbDialect), viper.GetString(configs.OptDbDsn), samples)
 	if err != nil {
 		logger.Get().Panic(err)
 	}
 	defer dbHandler.Close()
 
-	if err := frontend.SetupGin(gin.New(), dbHandler).Run(); err != nil {
+	if err := frontend.SetupGin(gin.New(), dbHandler).Run(hostPort); err != nil {
 		logger.Get().Panic(err)
 	}
 
