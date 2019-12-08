@@ -1,3 +1,6 @@
+/* Package api provides external type definitions
+It should not import any local packages.
+*/
 package api
 
 import (
@@ -7,7 +10,7 @@ import (
 // User is the internal representation of user table
 type User struct {
 	gorm.Model
-	Name     string `json:"name"`
+	Name     string `json:"name" gorm:"uniq_key"`
 	Password string `json:"-"`
 }
 

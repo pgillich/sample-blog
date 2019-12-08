@@ -49,6 +49,3 @@ issues:
     - text: "should have a package comment, unless it's in another file for this package"
       linters:
         - golint
-    - text: "at least one file in a package should have a package comment"
-      linters:
-        - stylecheck

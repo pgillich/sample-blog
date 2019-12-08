@@ -90,7 +90,7 @@ A simple API plan for the servce (with `/api/v1` prefix):
 
 * `DELETE`: Delete a specific comment
 
-`/stat/:stat`
+`/stat/user-post-comment`
 
 * `GET`: Get a specific statistics by filter
 
@@ -108,7 +108,7 @@ Paths for O&M (without `/api/v1` prefix):
 
 It's simple: Sqlite. Sqlite supports in-memory storage, so faking is not needed during automatic tests.
 
-If different DBs should be supported, Factory+Builder design pattern can be used, where in-memory Sqlite can be used for automatic tests.
+If different DBs should be supported, Factory+Builder design pattern can be used, where in-memory Sqlite can be used for automatic tests. Currently, Postgres can be used, too, but not tested.
 
 Unfortunatelly, Sqlite does not support foreign keys: <https://github.com/jinzhu/gorm/issues/635>. Example for workaround:
 

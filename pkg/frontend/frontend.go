@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"github.com/pgillich/errfmt"
 
 	"github.com/pgillich/sample-blog/internal/dao"
@@ -14,7 +13,7 @@ import (
 )
 
 // SetupGin is the service, called by automatic test, too
-func SetupGin(router *gin.Engine, db *gorm.DB) *gin.Engine {
+func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine {
 	//nolint:gocritic
 	/*
 		r.Use(gin.Logger())
@@ -27,15 +26,15 @@ func SetupGin(router *gin.Engine, db *gorm.DB) *gin.Engine {
 		/*
 			v1.Use(auth())
 		*/
-		v1.GET("/stat/user-post-comment", web.DecorHandlerDB(GetUserPostCommentStats, db))
+		v1.GET("/stat/user-post-comment", web.DecorHandlerDB(GetUserPostCommentStats, dbHandler))
 	}
 
 	return router
 }
 
 // GetUserPostCommentStats collects and returns user activity
-func GetUserPostCommentStats(c *gin.Context, db *gorm.DB) {
-	if stats, err := dao.GetUserPostCommentStats(db); err != nil {
+func GetUserPostCommentStats(c *gin.Context, dbHandler *dao.Handler) {
+	if stats, err := dbHandler.GetUserPostCommentStats(c.Param("days")); err != nil {
 		errs := logger.Get().WithError(err)
 		statusCode := http.StatusBadRequest
 		httpProblem := errfmt.BuildHTTPProblem(statusCode, errs)

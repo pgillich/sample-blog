@@ -27,20 +27,23 @@ func init() { // nolint:gochecknoinits
 
 	registerStringOption(frontendCmd, configs.OptServiceHostPort, configs.DefaultServiceHostPort, "host:port listening on")
 
+	registerStringOption(frontendCmd, configs.OptDbDialect, configs.DefaultDbDialect, "DB dialect (Gorm driver name)")
 	registerStringOption(frontendCmd, configs.OptDbDsn, configs.DefaultDbDsn, "DB connection info")
+	registerBoolOption(frontendCmd, configs.OptDbSample, configs.DefaultDbSample, "DB sample filling")
 }
 
 func startFrontend() {
 	hostPort := viper.GetString(configs.OptServiceHostPort)
 	logger.Get().Infof("Start Frontend on %s", hostPort)
 
-	db, err := dao.ConnectSqlite(viper.GetString(configs.OptDbDsn))
+	dbHandler, err := dao.NewHandler(
+		viper.GetString(configs.OptDbDialect), viper.GetString(configs.OptDbDsn), viper.GetBool(configs.OptDbSample))
 	if err != nil {
 		logger.Get().Panic(err)
 	}
-	defer db.Close() //nolint:errcheck
+	defer dbHandler.Close()
 
-	if err := frontend.SetupGin(gin.New(), db).Run(); err != nil {
+	if err := frontend.SetupGin(gin.New(), dbHandler).Run(); err != nil {
 		logger.Get().Panic(err)
 	}
 

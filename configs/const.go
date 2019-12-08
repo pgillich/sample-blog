@@ -1,4 +1,6 @@
-// Package configs contains global configs
+/* Package configs contains global configs
+It should not import any local packages.
+*/
 package configs
 
 const (
@@ -12,8 +14,18 @@ const (
 	// DefaultServiceHostPort is default value to OptServiceHostPort
 	DefaultServiceHostPort = ":8088"
 
+	// OptDbDialect is the DB dialect (Gorm driver name)
+	OptDbDialect = "db-dialect"
+	// DefaultDbDialect is default value to OptDbDialect
+	DefaultDbDialect = "sqlite3"
+
 	// OptDbDsn is the DB connection info
 	OptDbDsn = "db-dsn"
 	// DefaultDbDsn is default value to OptDbDsn
 	DefaultDbDsn = ":memory:"
+
+	// OptDbSample enables filling DB by sampe data
+	OptDbSample = "db-sample"
+	// DefaultDbSample is default value to OptDbSample
+	DefaultDbSample = true
 )

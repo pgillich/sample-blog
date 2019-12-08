@@ -58,3 +58,9 @@ func registerStringOption(command *cobra.Command, name string, value string, usa
 	command.PersistentFlags().String(name, value, strings.ToUpper(envName)+", "+usage)
 	viper.BindPFlag(name, command.PersistentFlags().Lookup(name)) // nolint:errcheck,gosec
 }
+
+func registerBoolOption(command *cobra.Command, name string, value bool, usage string) {
+	envName := getEnvReplacer().Replace(name)
+	command.PersistentFlags().Bool(name, value, strings.ToUpper(envName)+", "+usage)
+	viper.BindPFlag(name, command.PersistentFlags().Lookup(name)) // nolint:errcheck,gosec
+}
