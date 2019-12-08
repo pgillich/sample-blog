@@ -80,34 +80,34 @@ type CompactSample struct {
 // GetDefaultSampleFill returns the default samples for DB
 func GetDefaultSampleFill() []CompactSample {
 	return []CompactSample{
-		{api.User{Name: "Kovács János", Password: "kovacs12"}, []EntryCommentSample{
+		{api.User{Name: "kovacsj", Password: "kovacs12"}, []EntryCommentSample{
 			{"Entry K#1": [][]string{
-				{"Kovács János", "Comment K#1/1", "2019-12-01"},
-				{"Szabó Pál", "Comment K#1/2", "2019-12-01"},
-				{"Szabó Pál", "Comment K#1/3", "2019-12-02"},
+				{"kovacsj", "Comment K#1/1", "2019-12-01"},
+				{"szabop", "Comment K#1/2", "2019-12-01"},
+				{"szabop", "Comment K#1/3", "2019-12-02"},
 			}},
 		}},
-		{api.User{Name: "Szabó Pál", Password: "pal12"}, []EntryCommentSample{
+		{api.User{Name: "szabop", Password: "pal12"}, []EntryCommentSample{
 			{"Entry S#1": [][]string{
-				{"Szabó Pál", "Comment S#1/1", "2019-12-02"},
-				{"Kovács János", "Comment S#1/2", "2019-12-02"},
-				{"Kovács János", "Comment S#1/3", "2019-12-03"},
+				{"szabop", "Comment S#1/1", "2019-12-02"},
+				{"kovacsj", "Comment S#1/2", "2019-12-02"},
+				{"kovacsj", "Comment S#1/3", "2019-12-03"},
 			}},
 			{"Entry S#2": [][]string{
-				{"Kovács János", "Comment S#2/1", "2019-12-03"},
+				{"kovacsj", "Comment S#2/1", "2019-12-03"},
 			}},
 			{"Entry S#3": [][]string{
-				{"Kovács János", "Comment S#3/1", "2019-12-03"},
+				{"kovacsj", "Comment S#3/1", "2019-12-03"},
 			}},
 			{"Entry S#4": [][]string{
-				{"Kovács János", "Comment S#4/1", "2019-12-04"},
-				{"Kovács János", "Comment S#4/2", "2019-12-05"},
+				{"kovacsj", "Comment S#4/1", "2019-12-04"},
+				{"kovacsj", "Comment S#4/2", "2019-12-05"},
 			}},
 		}},
-		{api.User{Name: "Kocsis Irma", Password: "irma12"}, []EntryCommentSample{
+		{api.User{Name: "kocsisi", Password: "irma12"}, []EntryCommentSample{
 			{"Entry I#1": [][]string{
-				{"Szabó Pál", "Comment K#1/1", "2019-12-03"},
-				{"Kovács János", "Comment I#1/2", "2019-12-03"},
+				{"szabop", "Comment K#1/1", "2019-12-03"},
+				{"kovacsj", "Comment I#1/2", "2019-12-03"},
 			}},
 		}},
 	}
@@ -213,7 +213,21 @@ func (dbHandler *Handler) GetUserByName(name string) (api.User, error) {
 	return user, nil
 }
 
+// CheckUser checks user for auth
+func (dbHandler *Handler) CheckUser(name string, password string) bool {
+	var user api.User
+
+	user, err := dbHandler.GetUserByName(name)
+	if err != nil {
+		logger.Get().Info("User not exists", "name", name)
+		return false
+	}
+
+	return user.Password == hashPassword(password)
+}
+
 // GetUserPostCommentStats returns user activity stat
+// TODO refactoring: replace Unscoped().Raw() to better Gorm functions
 func (dbHandler *Handler) GetUserPostCommentStats(daysString string) (api.UserPostCommentStats, error) {
 	stats := api.UserPostCommentStats{}
 

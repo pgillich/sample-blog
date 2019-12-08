@@ -65,11 +65,15 @@ Examples:
 
 ## API
 
-A simple API plan for the servce (with `/api/v1` prefix):
+A simple API **plan** for the servce (with `/api/v1` prefix):
 
 `/login`
 
-* `POST`: Login
+* `POST`: Login (IMPLEMENTED)
+
+`/refresh_token`
+
+* `GET`: Refresh auth token (IMPLEMENTED)
 
 `/entry`
 
@@ -92,7 +96,7 @@ A simple API plan for the servce (with `/api/v1` prefix):
 
 `/stat/user-post-comment`
 
-* `GET`: Get a specific statistics by filter
+* `GET`: Get a specific statistics by filter (IMPLEMENTED)
 
 Paths for O&M (without `/api/v1` prefix):
 
@@ -125,13 +129,39 @@ mkdir -p tmp/sqlite
 ./sample-blog frontend --db-dsn tmp/sqlite/blog.db
 ```
 
+### Authentication
+
+A popular Gin JWT framework was selected: <https://github.com/appleboy/gin-jwt>. First example on the project page was adopted.
+
+Example for getting token:
+
+```text
+$ curl -s -H "Content-Type: application/json" -X POST --data '{"username":"kovacsj","password":"kovacs12"}' localhost:8088/api/v1/login | jq
+{
+  "code": 200,
+  "expire": "2019-12-08T20:55:16+01:00",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzU4MzQ5MTYsImlkIjoia292YWNzaiIsIm9yaWdfaWF0IjoxNTc1ODMxMzE2fQ.1iYMVvUqYZxgqIHS9WFsj34IZJCH6LcKgjUB2MHpY50"
+}
+```
+
+Example for refreshing token:
+
+```text
+$ curl -s -H "Content-Type: application/json" -H "Authorization:Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzU4MzQ5MTYsImlkIjoia292YWNzaiIsIm9yaWdfaWF0IjoxNTc1ODMxMzE2fQ.1iYMVvUqYZxgqIHS9WFsj34IZJCH6LcKgjUB2MHpY50" localhost:8088/api/v1/refresh_token | jq
+{
+  "code": 200,
+  "expire": "2019-12-08T20:56:19+01:00",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzU4MzQ5NzksImlkIjoia292YWNzaiIsIm9yaWdfaWF0IjoxNTc1ODMxMzc5fQ.dU9hDYT5-WksdkC7k82RN6XVklysTCvJyFTwjg1AwN4"
+}
+```
+
 ## Automatic test
 
 Automatic tests can be executed by below commands:
 
 ```sh
-go vet
 go mod verify
+go vet
 golangci-lint run
 go test -v ./...
 ```
@@ -156,17 +186,17 @@ Positive test: `TestGetUserPostCommentStats`, see same with curl:
 $ curl -s localhost:8088/api/v1/stat/user-post-comment?days=4 | jq
 {
   "1": {
-    "userName": "Kovács János",
+    "userName": "kovacsj",
     "entries": 0,
     "comments": 1
   },
   "2": {
-    "userName": "Szabó Pál",
+    "userName": "szabop",
     "entries": 0,
     "comments": 0
   },
   "3": {
-    "userName": "Kocsis Irma",
+    "userName": "kocsisi",
     "entries": 0,
     "comments": 0
   }

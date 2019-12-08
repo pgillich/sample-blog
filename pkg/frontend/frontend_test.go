@@ -35,17 +35,17 @@ func TestGetUserPostCommentStatsFailed(t *testing.T) {
 func TestGetUserPostCommentStats(t *testing.T) {
 	testGetUserPostCommentStats(t, "4", "2019-12-05 12:00:00+00:00", http.StatusOK, 3, `{
   "1": {
-    "userName": "Kovács János",
+    "userName": "kovacsj",
     "entries": 1,
     "comments": 8
   },
   "2": {
-    "userName": "Szabó Pál",
+    "userName": "szabop",
     "entries": 4,
     "comments": 4
   },
   "3": {
-    "userName": "Kocsis Irma",
+    "userName": "kocsisi",
     "entries": 1,
     "comments": 0
   }

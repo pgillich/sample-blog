@@ -5,6 +5,7 @@ go 1.13
 require (
 	emperror.dev/emperror v0.21.3
 	emperror.dev/errors v0.4.3
+	github.com/appleboy/gin-jwt/v2 v2.6.2
 	github.com/gin-contrib/pprof v0.0.0-20180827024024-a27513940d36
 	github.com/gin-gonic/gin v1.4.0
 	github.com/go-openapi/errors v0.19.2
