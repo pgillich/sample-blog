@@ -79,18 +79,18 @@ func testGetUserPostCommentStats(t *testing.T,
 
 	body, err := ioutil.ReadAll(httpResponse.Body)
 	assert.NoError(t, err, "Body stat/user-post-comment")
+
 	response := api.UserPostCommentStats{}
+
 	assert.NoError(t, json.Unmarshal(body, &response), "Body stat/user-post-comment")
-
 	assert.Equal(t, expectedUserNum, len(response), "Users stat/user-post-comment")
-
-	jsonResponse, _ := json.MarshalIndent(&response, "", "  ") //nolint:errcheck
-	assert.Equal(t, expectedBody, string(jsonResponse), "Stat stat/user-post-comment")
+	assert.Equal(t, expectedBody, test.JSONMarshal(&response), "Stat stat/user-post-comment")
 }
 
 func performRequest(method, target string, body io.Reader, router http.Handler) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, body)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, r)
+
 	return w
 }

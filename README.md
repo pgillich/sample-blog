@@ -116,6 +116,8 @@ Unfortunatelly, Sqlite does not support foreign keys: <https://github.com/jinzhu
 UserID uint   `json:"userID" sql:"type:integer REFERENCES users(id)"`
 ```
 
+There are a few other issues of Sqlite, because it's a very simple database, see TODO at `GetUserPostCommentStats`.
+
 Running SQLite using filesystem:
 
 ```sh
@@ -125,7 +127,26 @@ mkdir -p tmp/sqlite
 
 ## Automatic test
 
-Instead of unit tests, E2E function test were written, because it makes better coverage. The test cases imply a HTTP request to Gin, the middleware calls DB component, too. For making artificial environment, test case hacks a few things and starts Gin and handlers with different parameters.
+Automatic tests can be executed by below commands:
+
+```sh
+go vet
+go mod verify
+golangci-lint run
+go test -v ./...
+```
+
+### Unit tests
+
+Below unit tests were implemented:
+
+* TestNewUser
+* TestGetUser
+* TestGetUserFailed
+
+### Function tests
+
+E2E function test were written, because it makes better coverage than unit tests. The test cases imply a HTTP request to Gin, the middleware calls DB component, too. For making artificial environment, test case hacks a few things and starts Gin and handlers with different parameters (for example decorator function: `DecorHandlerDB`).
 
 `stat/user-post-comment`
 

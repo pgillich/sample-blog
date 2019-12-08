@@ -201,6 +201,18 @@ func (dbHandler *Handler) CreateComment(userID uint, entryID uint, text string, 
 	return comment, nil
 }
 
+// GetUserByName returns a user by name
+func (dbHandler *Handler) GetUserByName(name string) (api.User, error) {
+	var user api.User
+
+	db := dbHandler.DB.Where(&api.User{Name: name}).First(&user)
+	if db.Error != nil {
+		return api.User{}, errors.Wrap(db.Error, "cannot get user")
+	}
+
+	return user, nil
+}
+
 // GetUserPostCommentStats returns user activity stat
 func (dbHandler *Handler) GetUserPostCommentStats(daysString string) (api.UserPostCommentStats, error) {
 	stats := api.UserPostCommentStats{}
@@ -209,11 +221,13 @@ func (dbHandler *Handler) GetUserPostCommentStats(daysString string) (api.UserPo
 	if err != nil {
 		return stats, errors.WrapWithDetails(err, "invalid interval", "days", daysString)
 	}
+
 	now := dbHandler.TimeNow()
 	fromTime := now.Add(-time.Duration(days*24) * time.Hour)
 
 	users := []api.User{}
 	db := dbHandler.DB.Find(&users)
+
 	if db.Error != nil {
 		return stats, errors.Wrap(db.Error, "cannot get users")
 	}
@@ -222,12 +236,12 @@ func (dbHandler *Handler) GetUserPostCommentStats(daysString string) (api.UserPo
 		stats[user.ID] = &api.PostCommentStat{UserName: user.Name}
 	}
 
-	var userID uint
-	var count uint
+	var userID, count uint
 
 	//nolint:lll
 	query := `SELECT user.id AS ID, COUNT(entry.id) AS Count FROM user JOIN entry ON entry.user_id = user.id WHERE entry.created_at >= ? GROUP BY user.id`
 	rows, err := db.Unscoped().Raw(query, fromTime.Format(time.RFC3339)).Rows()
+
 	if err != nil {
 		return stats, errors.Wrap(err, "cannot get entries")
 	}
@@ -236,6 +250,7 @@ func (dbHandler *Handler) GetUserPostCommentStats(daysString string) (api.UserPo
 		if err = rows.Scan(&userID, &count); err != nil {
 			return stats, errors.Wrap(err, "cannot get entries")
 		}
+
 		stats[userID].Entries = count
 	}
 
@@ -251,6 +266,7 @@ func (dbHandler *Handler) GetUserPostCommentStats(daysString string) (api.UserPo
 		if err := rows.Scan(&userID, &count); err != nil {
 			return stats, errors.Wrap(err, "cannot get entries")
 		}
+
 		stats[userID].Comments = count
 	}
 
@@ -260,5 +276,6 @@ func (dbHandler *Handler) GetUserPostCommentStats(daysString string) (api.UserPo
 func hashPassword(password string) string {
 	h := sha1.New()           //nolint:gosec
 	h.Write([]byte(password)) //nolint:errcheck,gosec
+
 	return hex.EncodeToString(h.Sum(nil))
 }

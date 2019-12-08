@@ -13,13 +13,12 @@ import (
 )
 
 // SetupGin is the service, called by automatic test, too
-func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine {
+func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint:wsl
 	//nolint:gocritic
 	/*
 		r.Use(gin.Logger())
 		r.Use(gin.Recovery())
 	*/
-
 	v1 := router.Group("/api/v1")
 	{ //nolint:gocritic
 		//nolint:gocritic
