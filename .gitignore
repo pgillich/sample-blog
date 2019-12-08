@@ -13,3 +13,12 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Local VSCode workspace config
+local.code-workspace
+
+# Temp files, for example SQLite dir
+tmp/
+
+# Compiled binary
+sample-blog

@@ -1,0 +1,9 @@
+{
+    "editor.formatOnSave": true,
+    "go.formatTool": "gofmt",
+    "git.enableSmartCommit": true,
+    "go.lintTool": "golangci-lint",
+    "go.lintOnSave": "package",
+    "editor.formatOnSaveTimeout": 1000,
+    "diffEditor.ignoreTrimWhitespace": true,
+}
