@@ -2,7 +2,10 @@
 package frontend
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
@@ -10,6 +13,7 @@ import (
 	"github.com/pgillich/errfmt"
 
 	"github.com/pgillich/sample-blog/api"
+	"github.com/pgillich/sample-blog/configs"
 	"github.com/pgillich/sample-blog/internal/dao"
 	"github.com/pgillich/sample-blog/internal/logger"
 	"github.com/pgillich/sample-blog/internal/web"
@@ -19,18 +23,6 @@ type login struct {
 	Username string `form:"username" json:"username" binding:"required"`
 	Password string `form:"password" json:"password" binding:"required"`
 }
-
-/*
-func helloHandler(c *gin.Context) {
-	claims := jwt.ExtractClaims(c)
-	user, _ := c.Get(identityKey)
-	c.JSON(200, gin.H{
-		"userID":   claims[identityKey],
-		"userName": user.(*api.User).Name,
-		"text":     "Hello World.",
-	})
-}
-*/
 
 // SetupGin is the service, called by automatic test, too
 func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint:wsl
@@ -52,24 +44,26 @@ func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint
 
 		v1.GET("/stat/user-post-comment", web.DecorHandlerDB(GetUserPostCommentStats, dbHandler))
 	}
+	v1.Use(authMiddleware.MiddlewareFunc())
+	{ //nolint:gocritic
+		v1.POST("/entry/:entry/comment", web.DecorHandlerDB(PostComment, dbHandler))
+	}
 
 	return router
 }
 
 // BuildAuthMiddleware makes JWT middleware
 func BuildAuthMiddleware(dbHandler *dao.Handler) (*jwt.GinJWTMiddleware, error) {
-	identityKey := "id"
-
 	return jwt.New(&jwt.GinJWTMiddleware{
 		Realm:       "test zone",
 		Key:         []byte("secret key"),
 		Timeout:     time.Hour,
 		MaxRefresh:  time.Hour,
-		IdentityKey: identityKey,
+		IdentityKey: configs.AuthIdentityKey,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*api.User); ok {
 				return jwt.MapClaims{
-					identityKey: v.Name,
+					configs.AuthIdentityKey: v.Name,
 				}
 			}
 			return jwt.MapClaims{}
@@ -77,7 +71,7 @@ func BuildAuthMiddleware(dbHandler *dao.Handler) (*jwt.GinJWTMiddleware, error) 
 		IdentityHandler: func(c *gin.Context) interface{} {
 			claims := jwt.ExtractClaims(c)
 			return &api.User{
-				Name: claims[identityKey].(string),
+				Name: claims[configs.AuthIdentityKey].(string),
 			}
 		},
 		Authenticator: func(c *gin.Context) (interface{}, error) {
@@ -85,14 +79,14 @@ func BuildAuthMiddleware(dbHandler *dao.Handler) (*jwt.GinJWTMiddleware, error) 
 			if err := c.ShouldBind(&loginVals); err != nil {
 				return "", jwt.ErrMissingLoginValues
 			}
-			userID := loginVals.Username
+			userName := loginVals.Username
 			password := loginVals.Password
 
 			userOK := dbHandler.CheckUser(loginVals.Username, loginVals.Password)
 			// TODO admin user
-			if userOK || (userID == "admin" && password == "admin") {
+			if userOK || (userName == "admin" && password == "admin") {
 				return &api.User{
-					Name: userID,
+					Name: userName,
 				}, nil
 			}
 
@@ -100,8 +94,9 @@ func BuildAuthMiddleware(dbHandler *dao.Handler) (*jwt.GinJWTMiddleware, error) 
 		},
 		Authorizator: func(data interface{}, c *gin.Context) bool {
 			// TODO admin user
-			if v, ok := data.(*api.User); ok && v.Name == "admin" {
-				return true
+			if u, ok := data.(*api.User); ok /* && u.Name == "admin" */ {
+				_, err := dbHandler.GetUserByName(u.Name)
+				return err == nil
 			}
 
 			return false
@@ -144,5 +139,51 @@ func GetUserPostCommentStats(c *gin.Context, dbHandler *dao.Handler) {
 		errs.WithField("status", statusCode).Warning("cannot get stat")
 	} else {
 		c.JSON(http.StatusOK, stats)
+	}
+}
+
+// PostComment creates a new comment to an entry
+func PostComment(c *gin.Context, dbHandler *dao.Handler) {
+	claims := jwt.ExtractClaims(c)
+	userName := fmt.Sprintf("%s", claims[configs.AuthIdentityKey])
+	id, _ := c.Get(configs.AuthIdentityKey)
+	fmt.Print(id)
+
+	var (
+		err       error
+		user      api.User
+		entry     api.Entry
+		entryID   int
+		comment   api.Comment
+		bodyBytes []byte
+		body      api.Text
+	)
+
+	if bodyBytes, err = c.GetRawData(); err == nil {
+		if err = json.Unmarshal(bodyBytes, &body); err == nil {
+			if user, err = dbHandler.GetUserByName(userName); err == nil {
+				if entryID, err = strconv.Atoi(c.Param("entry")); err == nil {
+					if entry, err = dbHandler.GetEntryByID(uint(entryID)); err == nil {
+						if user.ID != entry.UserID {
+							err = fmt.Errorf("only own entry can be commented")
+						} else {
+							comment, err = dbHandler.CreateComment(user.ID, entry.ID, body.Text, time.Time{})
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// TODO refactor: move error handling and http status processing to common part
+	if err != nil {
+		errs := logger.Get().WithError(err)
+		statusCode := http.StatusBadRequest
+		httpProblem := errfmt.BuildHTTPProblem(statusCode, errs)
+		c.JSON(statusCode, httpProblem)
+
+		errs.WithField("status", statusCode).Warning("cannot get stat")
+	} else {
+		c.JSON(http.StatusOK, comment)
 	}
 }

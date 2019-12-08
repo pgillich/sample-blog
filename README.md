@@ -22,7 +22,7 @@ There are a lot of web/REST frameworks. Since it's a simple demo, any can be goo
 
 ### OpenAPI
 
-There are several possibilities to generate Go code from OpenAPI spec or to generate OpenAPI spec from Go code. Finally, none of them was selected, but `swaggo/gin-swagger` (Go --> OpenAPI) can be the best alternative.
+There are several possibilities to generate Go code from OpenAPI spec or to generate OpenAPI spec from Go code. Finally, none of them was selected, but `swaggo/gin-swagger` (Go --> OpenAPI) can be the best alternative (not implemented).
 
 **<https://github.com/OpenAPITools/openapi-generator>**
 
@@ -87,7 +87,7 @@ A simple API **plan** for the servce (with `/api/v1` prefix):
 
 `/entry/:entry/comment`
 
-* `POST`: Write a new comment
+* `POST`: Write a new comment (IMPLEMENTED)
 * `GET`: Get comments of a entry by filter
 
 `/entry/:entry/comment/:comment`
@@ -122,7 +122,7 @@ UserID uint   `json:"userID" sql:"type:integer REFERENCES users(id)"`
 
 There are a few other issues of Sqlite, because it's a very simple database, see TODO at `GetUserPostCommentStats`.
 
-Running SQLite using filesystem:
+Running frontend, using filesystem:
 
 ```sh
 mkdir -p tmp/sqlite
@@ -136,7 +136,8 @@ A popular Gin JWT framework was selected: <https://github.com/appleboy/gin-jwt>.
 Example for getting token:
 
 ```text
-$ curl -s -H "Content-Type: application/json" -X POST --data '{"username":"kovacsj","password":"kovacs12"}' localhost:8088/api/v1/login | jq
+curl -s -H "Content-Type: application/json" -X POST --data '{"username":"kovacsj","password":"kovacs12"}' localhost:8088/api/v1/login | jq
+
 {
   "code": 200,
   "expire": "2019-12-08T20:55:16+01:00",
@@ -147,7 +148,8 @@ $ curl -s -H "Content-Type: application/json" -X POST --data '{"username":"kovac
 Example for refreshing token:
 
 ```text
-$ curl -s -H "Content-Type: application/json" -H "Authorization:Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzU4MzQ5MTYsImlkIjoia292YWNzaiIsIm9yaWdfaWF0IjoxNTc1ODMxMzE2fQ.1iYMVvUqYZxgqIHS9WFsj34IZJCH6LcKgjUB2MHpY50" localhost:8088/api/v1/refresh_token | jq
+curl -s -H "Content-Type: application/json" -H "Authorization:Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzU4MzQ5MTYsImlkIjoia292YWNzaiIsIm9yaWdfaWF0IjoxNTc1ODMxMzE2fQ.1iYMVvUqYZxgqIHS9WFsj34IZJCH6LcKgjUB2MHpY50" localhost:8088/api/v1/refresh_token | jq
+
 {
   "code": 200,
   "expire": "2019-12-08T20:56:19+01:00",
@@ -170,9 +172,9 @@ go test -v ./...
 
 Below unit tests were implemented:
 
-* TestNewUser
-* TestGetUser
-* TestGetUserFailed
+* `TestNewUser`
+* `TestGetUser`
+* `TestGetUserFailed`
 
 ### Function tests
 
@@ -183,7 +185,8 @@ E2E function test were written, because it makes better coverage than unit tests
 Positive test: `TestGetUserPostCommentStats`, see same with curl:
 
 ```text
-$ curl -s localhost:8088/api/v1/stat/user-post-comment?days=4 | jq
+curl -s localhost:8088/api/v1/stat/user-post-comment?days=4 | jq
+
 {
   "1": {
     "userName": "kovacsj",
@@ -206,7 +209,8 @@ $ curl -s localhost:8088/api/v1/stat/user-post-comment?days=4 | jq
 Negative test: `TestGetUserPostCommentStatsFailed`, see same with curl:
 
 ```text
-$ curl -s localhost:8088/api/v1/stat/user-post-comment?days=négy | jq
+curl -s localhost:8088/api/v1/stat/user-post-comment?days=négy | jq
+
 {
   "type": "about:blank",
   "title": "Bad Request",
@@ -230,10 +234,117 @@ $ curl -s localhost:8088/api/v1/stat/user-post-comment?days=négy | jq
 }
 ```
 
+`/entry/:entry/comment`
+
+Positive test: `TestPostComment`, see same with curl:
+
+```text
+curl -s -H "Content-Type: application/json" -H "Authorization:Bearer $TOKEN" -X POST --data '{"text":"hello"}' localhost:8088/api/v1/entry/1/comment | jq
+
+{
+  "ID": 13,
+  "CreatedAt": "2019-12-08T22:43:37.350267157+01:00",
+  "UpdatedAt": "2019-12-08T22:43:37.350267157+01:00",
+  "DeletedAt": null,
+  "userID": 1,
+  "entryID": 1,
+  "text": "hello"
+}
+```
+
+Negative test: `TestPostCommentFailed`, see similar with curl:
+
+```text
+curl -s -H "Content-Type: application/json" -H "Authorization:Bearer $TOKEN" -X POST --data '{"text":"hello"}' localhost:8088/api/v1/entry/2/comment | jq
+
+{
+  "type": "about:blank",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "only own entry can be commented",
+  "details": {
+    "error": "\"only own entry can be commented\"",
+    "time": "\"2019-12-08T23:59:23+01:00\""
+  }
+}
+```
+
+### Test coverage
+
+Below commands can generate coverage metrics:
+
+```sh
+go test ./... -coverprofile tmp/cover.out
+go tool cover -html=tmp/cover.out
+```
+
+Unfortunately, it does not detect E2E function test coverage.
+
 ## Prometheus
 
 <https://github.com/Depado/ginprom>
 
+## Usage
+
+Starting the service:
+
+```sh
+go build && ./sample-blog frontend
+```
+
+Examples for non-auth urls:
+
+```text
+curl -s localhost:8088/api/v1/stat/user-post-comment?days=20 | jq
+
+{
+  "1": {
+    "userName": "kovacsj",
+    "entries": 1,
+    "comments": 8
+  },
+  "2": {
+    "userName": "szabop",
+    "entries": 4,
+    "comments": 4
+  },
+  "3": {
+    "userName": "kocsisi",
+    "entries": 1,
+    "comments": 0
+  }
+}
+```
+
+Examples for auth urls:
+
+```text
+TOKEN=$(curl -s -H "Content-Type: application/json" -X POST --data '{"username":"kovacsj","password":"kovacs12"}' localhost:8088/api/v1/login | jq -r '.token'); echo $TOKEN
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzU4NDQ5MjEsImlkIjoia292YWNzaiIsIm9yaWdfaWF0IjoxNTc1ODQxMzIxfQ.PlWOBY_Hy1JCaKsebjfjdZWsR2IU8-RUP6at57MZOmU
+```
+
+```text
+TOKEN=$(curl -s -H "Content-Type: application/json" -H "Authorization:Bearer $TOKEN" localhost:8088/api/v1/refresh_token | jq -r '.token'); echo $TOKEN
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzU4NDU1MTcsImlkIjoia292YWNzaiIsIm9yaWdfaWF0IjoxNTc1ODQxOTE3fQ.PFkD7sLxlw092849y1nKR_7QWJ3XAYc-Z2oaarQ_kuI
+```
+
+```text
+curl -s -H "Content-Type: application/json" -H "Authorization:Bearer $TOKEN" -X POST --data '{"text":"hello"}' localhost:8088/api/v1/entry/1/comment | jq
+
+{
+  "ID": 13,
+  "CreatedAt": "2019-12-08T22:43:37.350267157+01:00",
+  "UpdatedAt": "2019-12-08T22:43:37.350267157+01:00",
+  "DeletedAt": null,
+  "userID": 1,
+  "entryID": 1,
+  "text": "hello"
+}
+```
+
 ## TODO
 
 * Gin handlers should get and return more status codes.
+* OpenAPI documentation.

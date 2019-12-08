@@ -53,3 +53,8 @@ type PostCommentStat struct {
 
 // UserPostCommentStats is statistic about user activities
 type UserPostCommentStats map[uint]*PostCommentStat
+
+// Text is a simple text struct
+type Text struct {
+	Text string `json:"text"`
+}

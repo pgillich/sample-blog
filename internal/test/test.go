@@ -3,6 +3,7 @@ package test
 
 import (
 	"encoding/json"
+	"net/http"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -20,4 +21,21 @@ func JSONMarshal(v interface{}) string {
 	bytes, _ := json.MarshalIndent(&v, "", "  ") //nolint:errcheck
 
 	return string(bytes)
+}
+
+// GetHTTPHeaderJSON returns "Content-Type: application/json"
+func GetHTTPHeaderJSON() http.Header {
+	return http.Header{
+		"Content-Type": {"application/json"},
+	}
+}
+
+// GetHTTPHeaderJSONToken returns:
+// "Content-Type: application/json"
+// "Authorization:Bearer $TOKEN"
+func GetHTTPHeaderJSONToken(token string) http.Header {
+	return http.Header{
+		"Content-Type":  {"application/json"},
+		"Authorization": {"Bearer " + token},
+	}
 }

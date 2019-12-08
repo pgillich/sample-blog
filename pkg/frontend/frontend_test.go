@@ -2,11 +2,13 @@ package frontend
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -70,7 +72,7 @@ func testGetUserPostCommentStats(t *testing.T,
 
 	router := SetupGin(gin.New(), dbHandler)
 
-	httpResponse := performRequest("GET", "/api/v1/stat/user-post-comment?days="+days, nil, router)
+	httpResponse := performRequest("GET", "/api/v1/stat/user-post-comment?days="+days, nil, nil, router)
 	assert.Equal(t, expectedStatus, httpResponse.Code, "GET stat/user-post-comment")
 
 	if httpResponse.Code != http.StatusOK {
@@ -87,10 +89,75 @@ func testGetUserPostCommentStats(t *testing.T,
 	assert.Equal(t, expectedBody, test.JSONMarshal(&response), "Stat stat/user-post-comment")
 }
 
-func performRequest(method, target string, body io.Reader, router http.Handler) *httptest.ResponseRecorder {
+func performRequest(method, target string, header http.Header, body io.Reader, router http.Handler) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, body)
+	if header != nil {
+		r.Header = header
+	}
+
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, r)
 
 	return w
+}
+
+func TestPostComment(t *testing.T) {
+	testPostComment(t, "kovacsj", "kovacsj", "kovacs12", http.StatusOK, http.StatusOK)
+}
+
+func TestPostCommentFailed(t *testing.T) {
+	testPostComment(t, "szabop", "kovacsj", "kovacs12", http.StatusOK, http.StatusBadRequest)
+}
+
+func testPostComment(t *testing.T,
+	entryUser string, committerUser string, committerPassword string,
+	expectedStatusLogin int, expectedStatus int,
+) {
+	dbHandler, err := dao.NewHandler(
+		"sqlite3", ":memory:", dao.GetDefaultSampleFill())
+	if err != nil {
+		logger.Get().Panic(err)
+	}
+	defer dbHandler.Close()
+
+	router := SetupGin(gin.New(), dbHandler)
+
+	loginBody := login{Username: committerUser, Password: committerPassword}
+	httpResponse := performRequest("POST", "/api/v1/login", test.GetHTTPHeaderJSON(),
+		strings.NewReader(test.JSONMarshal(loginBody)), router)
+	assert.Equal(t, expectedStatusLogin, httpResponse.Code, "POST login")
+
+	if httpResponse.Code != http.StatusOK {
+		return
+	}
+
+	body, err := ioutil.ReadAll(httpResponse.Body)
+	assert.NoError(t, err, "Body login")
+
+	loginResponse := gin.H{}
+	assert.NoError(t, json.Unmarshal(body, &loginResponse), "Body login")
+
+	token := fmt.Sprintf("%s", loginResponse["token"])
+	assert.NotEmpty(t, token, "Token login")
+
+	entries, err := dbHandler.GetUserEntriesByName(entryUser)
+	assert.NoError(t, err, "Get entries")
+	assert.NotEmpty(t, entries, "Get entries")
+
+	entry := entries[0]
+	text := api.Text{Text: "HELLO"}
+
+	httpResponse = performRequest("POST", fmt.Sprintf("/api/v1/entry/%d/comment", entry.ID),
+		test.GetHTTPHeaderJSONToken(token), strings.NewReader(test.JSONMarshal(text)), router)
+	assert.Equal(t, expectedStatus, httpResponse.Code, "POST /api/v1/entry/%d/comment")
+
+	if httpResponse.Code != http.StatusOK {
+		return
+	}
+
+	body, err = ioutil.ReadAll(httpResponse.Body)
+	assert.NoError(t, err, "Body /api/v1/entry/%d/comment")
+
+	response := api.Comment{}
+	assert.NoError(t, json.Unmarshal(body, &response), "Body /api/v1/entry/%d/comment")
 }

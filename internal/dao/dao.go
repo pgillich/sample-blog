@@ -207,10 +207,39 @@ func (dbHandler *Handler) GetUserByName(name string) (api.User, error) {
 
 	db := dbHandler.DB.Where(&api.User{Name: name}).First(&user)
 	if db.Error != nil {
-		return api.User{}, errors.Wrap(db.Error, "cannot get user")
+		return user, errors.Wrap(db.Error, "cannot get user")
 	}
 
 	return user, nil
+}
+
+// GetEntryByID returns a entry by id
+func (dbHandler *Handler) GetEntryByID(id uint) (api.Entry, error) {
+	var entry api.Entry
+
+	db := dbHandler.DB.Where(&api.Entry{Model: gorm.Model{ID: id}}).First(&entry)
+	if db.Error != nil {
+		return entry, errors.Wrap(db.Error, "cannot get entry")
+	}
+
+	return entry, nil
+}
+
+// GetUserEntriesByName returns a entry by id
+func (dbHandler *Handler) GetUserEntriesByName(name string) ([]api.Entry, error) {
+	var entries []api.Entry
+
+	user, err := dbHandler.GetUserByName(name)
+	if err != nil {
+		return entries, errors.Wrap(err, "cannot get user")
+	}
+
+	db := dbHandler.DB.Where(&api.Entry{UserID: user.ID}).Find(&entries)
+	if db.Error != nil {
+		return entries, errors.Wrap(db.Error, "cannot get entry")
+	}
+
+	return entries, nil
 }
 
 // CheckUser checks user for auth
