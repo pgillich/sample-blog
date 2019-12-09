@@ -8,8 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//const defaultLogLevel = log.WarnLevel
-const defaultLogLevel = log.DebugLevel
+//const defaultLogLevel = log.DebugLevel
+const defaultLogLevel = log.WarnLevel
 
 // GetLogLevel returns the default log level for tests
 func GetLogLevel() string {

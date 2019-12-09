@@ -102,7 +102,7 @@ Paths for O&M (without `/api/v1` prefix):
 
 `/version`
 
-* Build num and timestamp, Git tag
+* Build num and timestamp, Git tag (IMPLEMENTED)
 
 `/metrics`
 
@@ -120,7 +120,7 @@ Unfortunatelly, Sqlite does not support foreign keys: <https://github.com/jinzhu
 UserID uint   `json:"userID" sql:"type:integer REFERENCES users(id)"`
 ```
 
-There are a few other issues of Sqlite, because it's a very simple database, see TODO at `GetUserPostCommentStats`.
+There are a few other issues of Sqlite, because it's a very simple database, see TODO at `GetUserPostCommentStats` and Dockefile (binary cannot be compiled statically).
 
 Running frontend, using filesystem:
 
@@ -282,7 +282,86 @@ Unfortunately, it does not detect E2E function test coverage.
 
 ## Prometheus
 
-<https://github.com/Depado/ginprom>
+Slected library: <https://github.com/Depado/ginprom>. It looks better than <https://github.com/zsais/go-gin-prometheus> (no PushGateway).
+
+Collecting metrics is not supported during tests (metrics will be registered multiple times).
+
+Useful system metrics:
+
+```text
+curl -s localhost:8088/metrics | egrep 'routine|alloc_bytes |_inuse_bytes |open_fds'
+
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 9
+# HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
+# TYPE go_memstats_alloc_bytes gauge
+go_memstats_alloc_bytes 1.45784e+06
+# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and still in use.
+# TYPE go_memstats_heap_alloc_bytes gauge
+go_memstats_heap_alloc_bytes 1.45784e+06
+# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use.
+# TYPE go_memstats_heap_inuse_bytes gauge
+go_memstats_heap_inuse_bytes 3.579904e+06
+# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures.
+# TYPE go_memstats_mcache_inuse_bytes gauge
+go_memstats_mcache_inuse_bytes 6944
+# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures.
+# TYPE go_memstats_mspan_inuse_bytes gauge
+go_memstats_mspan_inuse_bytes 57664
+# HELP go_memstats_stack_inuse_bytes Number of bytes in use by the stack allocator.
+# TYPE go_memstats_stack_inuse_bytes gauge
+go_memstats_stack_inuse_bytes 557056
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 7
+```
+
+Gin-related metrics:
+
+```text
+curl -s localhost:8088/metrics | grep gin_
+
+# HELP gin_gin_request_duration_seconds The HTTP request latencies in seconds.
+# TYPE gin_gin_request_duration_seconds summary
+gin_gin_request_duration_seconds{quantile="0.5"} 0.000736012
+gin_gin_request_duration_seconds{quantile="0.9"} 0.001213785
+gin_gin_request_duration_seconds{quantile="0.99"} 0.001429643
+gin_gin_request_duration_seconds_sum 0.012871773
+gin_gin_request_duration_seconds_count 17
+# HELP gin_gin_request_size_bytes The HTTP request sizes in bytes.
+# TYPE gin_gin_request_size_bytes summary
+gin_gin_request_size_bytes{quantile="0.5"} 157
+gin_gin_request_size_bytes{quantile="0.9"} 314
+gin_gin_request_size_bytes{quantile="0.99"} 314
+gin_gin_request_size_bytes_sum 3023
+gin_gin_request_size_bytes_count 17
+# HELP gin_gin_requests_total How many HTTP requests processed, partitioned by status code and HTTP method.
+# TYPE gin_gin_requests_total counter
+gin_gin_requests_total{code="200",handler="github.com/appleboy/gin-jwt/v2.(*GinJWTMiddleware).LoginHandler-fm",host="localhost:8088",method="POST",path="/api/v1/login"} 3
+gin_gin_requests_total{code="200",handler="github.com/appleboy/gin-jwt/v2.(*GinJWTMiddleware).RefreshHandler-fm",host="localhost:8088",method="GET",path="/api/v1/refresh_token"} 2
+gin_gin_requests_total{code="200",handler="github.com/pgillich/sample-blog/internal/web.DecorHandlerDB.func1",host="localhost:8088",method="GET",path="/api/v1/entry/:entry/comment"} 6
+gin_gin_requests_total{code="200",handler="github.com/pgillich/sample-blog/internal/web.DecorHandlerDB.func1",host="localhost:8088",method="POST",path="/api/v1/entry/:entry/comment"} 3
+gin_gin_requests_total{code="400",handler="github.com/pgillich/sample-blog/internal/web.DecorHandlerDB.func1",host="localhost:8088",method="GET",path="/api/v1/entry/:entry/comment"} 2
+gin_gin_requests_total{code="400",handler="github.com/pgillich/sample-blog/internal/web.DecorHandlerDB.func1",host="localhost:8088",method="POST",path="/api/v1/entry/:entry/comment"} 1
+# HELP gin_gin_response_size_bytes The HTTP response sizes in bytes.
+# TYPE gin_gin_response_size_bytes summary
+gin_gin_response_size_bytes{quantile="0.5"} 165
+gin_gin_response_size_bytes{quantile="0.9"} 907
+gin_gin_response_size_bytes{quantile="0.99"} 907
+gin_gin_response_size_bytes_sum 4529
+gin_gin_response_size_bytes_count 17
+```
+
+Example Docker compose deployment: <https://github.com/stefanprodan/dockprom>
+
+## Build
+
+Below script runs all tests and builds the binary and Docker image with build info:
+
+```sh
+scripts/build.sh
+```
 
 ## Usage
 
@@ -290,6 +369,10 @@ Starting the service:
 
 ```sh
 go build && ./sample-blog frontend
+```
+
+```sh
+docker run --rm -it -p "8088:8088" github.com/pgillich/sample-blog:0.0.1
 ```
 
 Examples for non-auth urls:
@@ -314,6 +397,12 @@ curl -s localhost:8088/api/v1/stat/user-post-comment?days=20 | jq
     "comments": 0
   }
 }
+```
+
+```text
+curl -s  localhost:8088/version
+
+{"tag":"0.0.1","commit":"edb0b07","branch":"extra","buildTime":"2019-12-09T00:56:02+01:00"}
 ```
 
 Examples for auth urls:
@@ -348,3 +437,5 @@ curl -s -H "Content-Type: application/json" -H "Authorization:Bearer $TOKEN" -X 
 
 * Gin handlers should get and return more status codes.
 * OpenAPI documentation.
+* Docker compose deployment
+* Kubernetes deployment

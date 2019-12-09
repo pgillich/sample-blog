@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Depado/ginprom"
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/pgillich/errfmt"
@@ -25,7 +26,7 @@ type login struct {
 }
 
 // SetupGin is the service, called by automatic test, too
-func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint:wsl
+func SetupGin(router *gin.Engine, dbHandler *dao.Handler, enableMetrics bool) *gin.Engine { //nolint:wsl
 	authMiddleware, err := BuildAuthMiddleware(dbHandler)
 	if err != nil {
 		logger.Get().Panic("JWT Error, " + err.Error())
@@ -36,6 +37,15 @@ func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	*/
+
+	if enableMetrics {
+		prom := ginprom.New(
+			ginprom.Engine(router),
+			ginprom.Subsystem("gin"),
+			ginprom.Path("/metrics"),
+		)
+		router.Use(prom.Instrument())
+	}
 
 	v1 := router.Group("/api/v1")
 	{ //nolint:gocritic
@@ -48,6 +58,8 @@ func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint
 	{ //nolint:gocritic
 		v1.POST("/entry/:entry/comment", web.DecorHandlerDB(PostComment, dbHandler))
 	}
+
+	router.GET("/version", GetVersion)
 
 	return router
 }
@@ -186,4 +198,14 @@ func PostComment(c *gin.Context, dbHandler *dao.Handler) {
 	} else {
 		c.JSON(http.StatusOK, comment)
 	}
+}
+
+// GetVersion returns build info
+func GetVersion(c *gin.Context) {
+	c.JSON(http.StatusOK, api.BuildInfo{
+		Tag:       configs.BuildTag,
+		Commit:    configs.BuildCommit,
+		Branch:    configs.BuildBranch,
+		BuildTime: configs.BuildTime,
+	})
 }

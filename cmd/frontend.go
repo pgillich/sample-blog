@@ -48,7 +48,7 @@ func startFrontend() {
 	}
 	defer dbHandler.Close()
 
-	if err := frontend.SetupGin(gin.New(), dbHandler).Run(hostPort); err != nil {
+	if err := frontend.SetupGin(gin.New(), dbHandler, true).Run(hostPort); err != nil {
 		logger.Get().Panic(err)
 	}
 
