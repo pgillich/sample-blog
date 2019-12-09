@@ -58,3 +58,11 @@ type UserPostCommentStats map[uint]*PostCommentStat
 type Text struct {
 	Text string `json:"text"`
 }
+
+// BuildInfo is the schema to /version
+type BuildInfo struct {
+	Tag       string `json:"tag"`
+	Commit    string `json:"commit"`
+	Branch    string `json:"branch"`
+	BuildTime string `json:"buildTime"`
+}

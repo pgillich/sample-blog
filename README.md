@@ -102,7 +102,7 @@ Paths for O&M (without `/api/v1` prefix):
 
 `/version`
 
-* Build num and timestamp, Git tag
+* Build num and timestamp, Git tag (IMPLEMENTED)
 
 `/metrics`
 
@@ -120,7 +120,7 @@ Unfortunatelly, Sqlite does not support foreign keys: <https://github.com/jinzhu
 UserID uint   `json:"userID" sql:"type:integer REFERENCES users(id)"`
 ```
 
-There are a few other issues of Sqlite, because it's a very simple database, see TODO at `GetUserPostCommentStats`.
+There are a few other issues of Sqlite, because it's a very simple database, see TODO at `GetUserPostCommentStats` and Dockefile (binary cannot be compiled statically).
 
 Running frontend, using filesystem:
 
@@ -284,12 +284,24 @@ Unfortunately, it does not detect E2E function test coverage.
 
 <https://github.com/Depado/ginprom>
 
+## Build
+
+Below script runs all tests and builds the binary and Docker image with build info:
+
+```sh
+scripts/build.sh
+```
+
 ## Usage
 
 Starting the service:
 
 ```sh
 go build && ./sample-blog frontend
+```
+
+```sh
+
 ```
 
 Examples for non-auth urls:
@@ -314,6 +326,12 @@ curl -s localhost:8088/api/v1/stat/user-post-comment?days=20 | jq
     "comments": 0
   }
 }
+```
+
+```text
+curl -s  localhost:8088/version
+
+{"tag":"0.0.1","commit":"edb0b07","branch":"extra","buildTime":"2019-12-09T00:56:02+01:00"}
 ```
 
 Examples for auth urls:

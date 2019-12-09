@@ -49,6 +49,8 @@ func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint
 		v1.POST("/entry/:entry/comment", web.DecorHandlerDB(PostComment, dbHandler))
 	}
 
+	router.GET("/version", GetVersion)
+
 	return router
 }
 
@@ -186,4 +188,14 @@ func PostComment(c *gin.Context, dbHandler *dao.Handler) {
 	} else {
 		c.JSON(http.StatusOK, comment)
 	}
+}
+
+// GetVersion returns build info
+func GetVersion(c *gin.Context) {
+	c.JSON(http.StatusOK, api.BuildInfo{
+		Tag:       configs.BuildTag,
+		Commit:    configs.BuildCommit,
+		Branch:    configs.BuildBranch,
+		BuildTime: configs.BuildTime,
+	})
 }

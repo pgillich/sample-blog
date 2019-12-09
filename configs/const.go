@@ -29,6 +29,6 @@ const (
 	// DefaultDbSample is default value to OptDbSample
 	DefaultDbSample = true
 
-	// Identity key to JWT
+	// AuthIdentityKey is Identity key to JWT
 	AuthIdentityKey = "id"
 )
