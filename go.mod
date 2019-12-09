@@ -6,6 +6,7 @@ go 1.13
 
 require (
 	emperror.dev/errors v0.4.3
+	github.com/Depado/ginprom v1.2.0
 	github.com/appleboy/gin-jwt/v2 v2.6.2
 	github.com/gin-gonic/gin v1.5.0
 	github.com/jinzhu/gorm v1.9.11

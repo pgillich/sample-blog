@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Depado/ginprom"
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/pgillich/errfmt"
@@ -25,7 +26,7 @@ type login struct {
 }
 
 // SetupGin is the service, called by automatic test, too
-func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint:wsl
+func SetupGin(router *gin.Engine, dbHandler *dao.Handler, enableMetrics bool) *gin.Engine { //nolint:wsl
 	authMiddleware, err := BuildAuthMiddleware(dbHandler)
 	if err != nil {
 		logger.Get().Panic("JWT Error, " + err.Error())
@@ -36,6 +37,15 @@ func SetupGin(router *gin.Engine, dbHandler *dao.Handler) *gin.Engine { //nolint
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	*/
+
+	if enableMetrics {
+		prom := ginprom.New(
+			ginprom.Engine(router),
+			ginprom.Subsystem("gin"),
+			ginprom.Path("/metrics"),
+		)
+		router.Use(prom.Instrument())
+	}
 
 	v1 := router.Group("/api/v1")
 	{ //nolint:gocritic

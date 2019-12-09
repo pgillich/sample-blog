@@ -70,7 +70,7 @@ func testGetUserPostCommentStats(t *testing.T,
 	}
 	dbHandler.TimeNow = timeNowFunc
 
-	router := SetupGin(gin.New(), dbHandler)
+	router := SetupGin(gin.New(), dbHandler, false)
 
 	httpResponse := performRequest("GET", "/api/v1/stat/user-post-comment?days="+days, nil, nil, router)
 	assert.Equal(t, expectedStatus, httpResponse.Code, "GET stat/user-post-comment")
@@ -120,7 +120,7 @@ func testPostComment(t *testing.T,
 	}
 	defer dbHandler.Close()
 
-	router := SetupGin(gin.New(), dbHandler)
+	router := SetupGin(gin.New(), dbHandler, false)
 
 	loginBody := login{Username: committerUser, Password: committerPassword}
 	httpResponse := performRequest("POST", "/api/v1/login", test.GetHTTPHeaderJSON(),
