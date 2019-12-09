@@ -301,7 +301,7 @@ go build && ./sample-blog frontend
 ```
 
 ```sh
-
+docker run --rm -it -p "8088:8088" github.com/pgillich/sample-blog:0.0.1
 ```
 
 Examples for non-auth urls:
