@@ -106,7 +106,7 @@ Paths for O&M (without `/api/v1` prefix):
 
 `/metrics`
 
-* Prometheus metrics
+* Prometheus metrics (IMPLEMENTED)
 
 ## Database
 
@@ -375,6 +375,27 @@ go build && ./sample-blog frontend
 docker run --rm -it -p "8088:8088" github.com/pgillich/sample-blog:0.0.1
 ```
 
+Parameters are written in help:
+
+```text
+./sample-blog frontend --help
+
+Start blog frontend service.
+
+Usage:
+  sample-blog frontend [flags]
+
+Flags:
+      --db-dialect string   DB_DIALECT, DB dialect (Gorm driver name) (default "sqlite3")
+      --db-dsn string       DB_DSN, DB connection info (default ":memory:")
+      --db-sample           DB_SAMPLE, DB sample filling (default true)
+  -h, --help                help for frontend
+      --listen string       LISTEN, host:port listening on (default ":8088")
+
+Global Flags:
+      --log-level string   LOG_LEVEL, log level (default "DEBUG")
+```
+
 Examples for non-auth urls:
 
 ```text
@@ -400,9 +421,14 @@ curl -s localhost:8088/api/v1/stat/user-post-comment?days=20 | jq
 ```
 
 ```text
-curl -s  localhost:8088/version
+curl -s  localhost:8088/version | jq
 
-{"tag":"0.0.1","commit":"edb0b07","branch":"extra","buildTime":"2019-12-09T00:56:02+01:00"}
+{
+  "tag": "0.0.2",
+  "commit": "a2b1095",
+  "branch": "master",
+  "buildTime": "2019-12-09T02:53:00+01:00"
+}
 ```
 
 Examples for auth urls:

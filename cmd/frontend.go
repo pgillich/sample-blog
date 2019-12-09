@@ -16,7 +16,7 @@ import (
 var frontendCmd = &cobra.Command{
 	Use:   "frontend",
 	Short: "Frontend",
-	Long:  `Start chat bot frontend service.`,
+	Long:  `Start blog frontend service.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		startFrontend()
 	},
