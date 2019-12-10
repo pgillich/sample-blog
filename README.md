@@ -120,8 +120,8 @@ The log library is <https://github.com/sirupsen/logrus>, with own formatter <htt
 
 Error handling at Gin handlers should be refactored, using a function decorator, similar to an example decorator at <https://github.com/pgillich/errfmt#http-problem-handler>. Prerequisites to refactoring:
 
-* [errfmt](https://github.com/pgillich/errfmt) is adopted to https://github.com/emperror/errors
-* all HTTP error responses are conform to RFC7807, including JWT auth errors (or at least, app status codes and JWT auth status codes are not clashed). 
+* [errfmt](https://github.com/pgillich/errfmt) is adopted to <https://github.com/emperror/emperror>
+* all HTTP error responses are conform to RFC7807, including JWT auth errors (or at least, app status codes and JWT auth status codes are not clashed)
 
 ## API
 
