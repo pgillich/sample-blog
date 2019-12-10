@@ -20,6 +20,8 @@ There are a lot of web/REST frameworks. Since it's a simple demo, any can be goo
 * Supports online metrics, if possible by Prometheus protocol.
 * Supports [RFC7807](https://tools.ietf.org/html/rfc7807) (Problem Details for HTTP APIs)
 
+Finally, <https://github.com/gin-gonic/gin> was selected.
+
 ### OpenAPI
 
 There are several possibilities to generate Go code from OpenAPI spec or to generate OpenAPI spec from Go code. Finally, none of them was selected, but `swaggo/gin-swagger` (Go --> OpenAPI) can be the best alternative (not implemented).
@@ -63,52 +65,7 @@ Examples:
 
 * <https://martinheinz.dev/blog/9>
 
-## API
-
-A simple API **plan** for the servce (with `/api/v1` prefix):
-
-`/login`
-
-* `POST`: Login (IMPLEMENTED)
-
-`/refresh_token`
-
-* `GET`: Refresh auth token (IMPLEMENTED)
-
-`/entry`
-
-* `POST`: Write a new blog entry
-* `GET`: Get posts by filter
-
-`/entry/:entry`
-
-* `GET`: Get a specific blog entry
-* `DELETE`: Delete a specific blog entry
-
-`/entry/:entry/comment`
-
-* `POST`: Write a new comment (IMPLEMENTED)
-* `GET`: Get comments of a entry by filter
-
-`/entry/:entry/comment/:comment`
-
-* `DELETE`: Delete a specific comment
-
-`/stat/user-post-comment`
-
-* `GET`: Get a specific statistics by filter (IMPLEMENTED)
-
-Paths for O&M (without `/api/v1` prefix):
-
-`/version`
-
-* Build num and timestamp, Git tag (IMPLEMENTED)
-
-`/metrics`
-
-* Prometheus metrics (IMPLEMENTED)
-
-## Database
+### Database
 
 It's simple: Sqlite. Sqlite supports in-memory storage, so faking is not needed during automatic tests.
 
@@ -156,6 +113,60 @@ curl -s -H "Content-Type: application/json" -H "Authorization:Bearer eyJhbGciOiJ
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzU4MzQ5NzksImlkIjoia292YWNzaiIsIm9yaWdfaWF0IjoxNTc1ODMxMzc5fQ.dU9hDYT5-WksdkC7k82RN6XVklysTCvJyFTwjg1AwN4"
 }
 ```
+
+### Log and error handling
+
+The log library is <https://github.com/sirupsen/logrus>, with own formatter <https://github.com/pgillich/errfmt>, which supports RFC7807. The error handler is <https://github.com/emperror/errors>.
+
+Error handling at Gin handlers should be refactored, using a function decorator, similar to an example decorator at <https://github.com/pgillich/errfmt#http-problem-handler>. Prerequisites to refactoring:
+
+* [errfmt](https://github.com/pgillich/errfmt) is adopted to https://github.com/emperror/errors
+* all HTTP error responses are conform to RFC7807, including JWT auth errors (or at least, app status codes and JWT auth status codes are not clashed). 
+
+## API
+
+A simple API **plan** for the servce (with `/api/v1` prefix):
+
+`/login`
+
+* `POST`: Login (IMPLEMENTED)
+
+`/refresh_token`
+
+* `GET`: Refresh auth token (IMPLEMENTED)
+
+`/entry`
+
+* `POST`: Write a new blog entry
+* `GET`: Get posts by filter
+
+`/entry/:entry`
+
+* `GET`: Get a specific blog entry
+* `DELETE`: Delete a specific blog entry
+
+`/entry/:entry/comment`
+
+* `POST`: Write a new comment (IMPLEMENTED)
+* `GET`: Get comments of a entry by filter
+
+`/entry/:entry/comment/:comment`
+
+* `DELETE`: Delete a specific comment
+
+`/stat/user-post-comment`
+
+* `GET`: Get a specific statistics by filter (IMPLEMENTED)
+
+Paths for O&M (without `/api/v1` prefix):
+
+`/version`
+
+* Build num and timestamp, Git tag (IMPLEMENTED)
+
+`/metrics`
+
+* Prometheus metrics (IMPLEMENTED)
 
 ## Automatic test
 
@@ -461,7 +472,9 @@ curl -s -H "Content-Type: application/json" -H "Authorization:Bearer $TOKEN" -X 
 
 ## TODO
 
-* Gin handlers should get and return more status codes.
-* OpenAPI documentation.
+* Gin handlers should get and return more status codes
+* Better error handling
+* OpenAPI documentation
 * Docker compose deployment
 * Kubernetes deployment
+* Adopting to CI
